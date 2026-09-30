@@ -1,40 +1,14 @@
 name: Machine Build
 
-# Full from-source build of dev-image for every hardware machine yoe
-# supports: the bootstrap toolchain, libc, busybox, the board's kernel and
-# bootloader, and image assembly. This is the board-coverage tier -- it
-# catches a BSP unit, kernel defconfig, or partition layout that stopped
-# building, which the QEMU matrix cannot see.
-#
-# The QEMU machines (qemu-x86_64, qemu-arm64) are deliberately absent here:
-# E2E Build (e2e-build.yaml) already covers them across all three distros
-# and boots each image, which is stronger signal than a build alone.
-#
-# Every board here is arm64, so each cell runs on an arm64 runner and builds
-# natively -- no cross-compilation and no QEMU user-mode emulation in the
-# build path. Each cell surfaces as its own CI check, e.g.
-# "Machine Build (beagleplay / alpine)".
-#
-# Each cell carries its own distro key rather than sharing one default,
-# because distro coverage is a board property. raspberrypi5 and beagleplay
-# build all three distros (alpine, debian, ubuntu) so the glibc BSP paths --
-# kernel packaging, bootloader install, partition layout on a dpkg rootfs --
-# get the same nightly signal the musl path does. raspberrypi4 stays
-# alpine-only: it shares its BSP units with raspberrypi5, so the extra cells
-# would re-test the same code on a second board. A machine whose kernel and
-# board packages come from a vendor apt feed (the Arduino UNO Q's, for
-# example) can only build the distro that feed is ABI-coupled to, and it
-# should say so next to the board it applies to.
+# Full from-source build of the Raspberry Pi 4 dev-image. This is the
+# board-coverage tier: it catches BSP units, kernel defconfig, partition
+# layout, and image assembly issues that the QEMU matrix cannot see.
 #
 # There is no boot test: these images target physical boards, and QEMU
-# cannot stand in for them. Each cell verifies the image artifact exists,
-# reports its partition table, and uploads the image (zstd-compressed) so a
-# nightly build can be downloaded and flashed to real hardware.
+# cannot stand in for them. The workflow verifies the image artifact exists,
+# reports its partition table, and uploads the image for flashing to real
+# hardware.
 on:
-  schedule:
-    # Offset from E2E Build (06:00 UTC) so the two nightlies don't contend
-    # for runners.
-    - cron: "0 3 * * *"
   workflow_dispatch:
 
 permissions:
@@ -51,30 +25,9 @@ jobs:
       # siblings on the first red cell.
       fail-fast: false
       matrix:
-        # Every cell spells out its machine, distro, and runner, so the
-        # distro coverage a board gets is visible next to the board rather
-        # than implied by a default plus an exclude list.
         include:
           - machine: raspberrypi4
             distro: alpine
-            runner: ubuntu-24.04-arm
-          - machine: raspberrypi5
-            distro: alpine
-            runner: ubuntu-24.04-arm
-          - machine: raspberrypi5
-            distro: debian
-            runner: ubuntu-24.04-arm
-          - machine: raspberrypi5
-            distro: ubuntu
-            runner: ubuntu-24.04-arm
-          - machine: beagleplay
-            distro: alpine
-            runner: ubuntu-24.04-arm
-          - machine: beagleplay
-            distro: debian
-            runner: ubuntu-24.04-arm
-          - machine: beagleplay
-            distro: ubuntu
             runner: ubuntu-24.04-arm
 
     steps:
