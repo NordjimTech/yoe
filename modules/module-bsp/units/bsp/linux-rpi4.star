@@ -6,15 +6,11 @@ unit(
     branch = "rpi-6.12.y",
     license = "GPL-2.0",
     description = "Raspberry Pi 4 kernel (BCM2711)",
-    deps = ["toolchain"],
     # The kernel's certs/extract-cert host tool needs OpenSSL/libcrypto
-    # headers. Package name differs by backend: Alpine bundles them in
-    # openssl-dev, the apt distros split them into libssl-dev.
-    distro_deps = {
-        "alpine": ["openssl-dev"],
-        "debian": ["libssl-dev"],
-        "ubuntu": ["libssl-dev"],
-    },
+    # headers. Use yoe's source-built OpenSSL on every distro so the
+    # headers and libraries come from the same unit and do not depend on
+    # a distro feed package that may disappear from its mirror.
+    deps = ["toolchain", "openssl"],
     container = "toolchain",
     container_arch = "target",
     tasks = [
